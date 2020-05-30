@@ -1,1 +1,4 @@
 traefik.toml
+cert.crt
+cert.key
+acme.json

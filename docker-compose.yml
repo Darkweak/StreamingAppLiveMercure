@@ -11,6 +11,10 @@ x-network:
     networks:
       - test
 
+networks:
+  test:
+    external: true
+
 services:
   traefik-StreamingAppLiveMercure:
     image: traefik:latest
@@ -22,6 +26,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./traefik.toml:/etc/traefik/traefik.toml
+      - ./acme.json:/acme.json
     <<: *test
 
   php-StreamingAppLiveMercure:
@@ -36,13 +41,12 @@ services:
       retries: 3
       start_period: 30s
     depends_on:
-      - db
+      - db-StreamingAppLiveMercure
     volumes:
       - ./api:/srv/api:rw,cached
       - ./api/docker/php/conf.d/api-platform.dev.ini:/usr/local/etc/php/conf.d/api-platform.ini
       # if you develop on Linux, you may use a bind-mounted host directory instead
       # - ./api/var:/srv/api/var:rw
-      - dev-certs:/certs:ro,nocopy
     <<: *test
 
   api-StreamingAppLiveMercure:
@@ -52,14 +56,11 @@ services:
       <<: *api-cache-from
     image: ${NGINX_IMAGE:-quay.io/api-platform/nginx}
     depends_on:
-      - php
+      - php-StreamingAppLiveMercure
     volumes:
       - ./api/public:/srv/api/public:ro
     expose:
       - 80
-    labels:
-      - traefik.http.routers.api.entrypoints=web
-      - traefik.http.routers.api.rule=Host(`api.${DOMAIN}`)
     <<: *test
 
   vulcain-StreamingAppLiveMercure:
@@ -69,13 +70,14 @@ services:
       - KEY_FILE=/certs/localhost.key
       - UPSTREAM=http://api
     depends_on:
-      - api
+      - api-StreamingAppLiveMercure
+    volumes:
+      - ./cert.crt:/certs/localhost.crt
+      - ./cert.key:/certs/localhost.key
     ports:
       - target: 443
         published: 8443
         protocol: tcp
-    labels:
-      - traefik.http.routers.vulcain.rule=Host(`vulcain.${DOMAIN}`)
     <<: *test
 
   db-StreamingAppLiveMercure:
@@ -100,15 +102,13 @@ services:
       - JWT_KEY=!ChangeMe!
       - KEY_FILE=/certs/localhost.key
       - PUBLISH_ALLOWED_ORIGINS=* # required for publishing from the demo page
-    labels:
-      - traefik.http.routers.mercure.rule=Host(`mercure.${DOMAIN}`)
-      - traefik.http.routers.mercure.entrypoints=web,web-secure
-      - traefik.http.routers.mercure.tls=true
     ports:
       - target: 443
         published: 1337
         protocol: tcp
-    <<: *test
+    volumes:
+      - ./cert.crt:/certs/localhost.crt
+      - ./cert.key:/certs/localhost.key
 
   admin-StreamingAppLiveMercure:
     build:
@@ -124,14 +124,7 @@ services:
       - target: 3000
         published: 444
         protocol: tcp
-    labels:
-      - traefik.http.routers.admin.rule=Host(`admin.${DOMAIN}`)
-      - traefik.http.services.admin.loadbalancer.server.port=3000
     <<: *test
 
 volumes:
   db-data: {}
-
-networks:
-  test:
-    external: true

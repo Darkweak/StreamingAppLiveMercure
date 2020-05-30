@@ -48,7 +48,7 @@ const CommonVideo = ({ url }) => (
 const App = () => {
   const [url, setUrl] = useState();
   const apiUrl = `${process.env.REACT_APP_API_ENTRYPOINT}/urls`;
-  const [eventSource, setEventSource] = useState(new RNEventSource(`https://mercure.domain.com:1337/.well-known/mercure?topic=*`));
+  const [eventSource, setEventSource] = useState(new RNEventSource(`https://mercure-streaming.devcv.fr:1337/.well-known/mercure?topic=*`));
 
   useEffect(() => {
     eventSource.addEventListener('message', alert);
