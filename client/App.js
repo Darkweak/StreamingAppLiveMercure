@@ -49,6 +49,7 @@ const App = () => {
   const [url, setUrl] = useState();
   const apiUrl = `${process.env.REACT_APP_API_ENTRYPOINT}/urls`;
   const [eventSource, setEventSource] = useState(new RNEventSource(`https://mercure-streaming.devcv.fr:1337/.well-known/mercure?topic=*`));
+  console.log(eventSource);
 
   useEffect(() => {
     eventSource.addEventListener('message', alert);

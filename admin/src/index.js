@@ -18,7 +18,7 @@ const primary = {
 ReactDOM.render(
   <HydraAdmin
     {...{
-      entrypoint: 'http://api.domain.com',
+      entrypoint: process.env.REACT_APP_API_ENTRYPOINT,
       layout: CustomLayout,
       theme: createMuiTheme({
         overrides: {
