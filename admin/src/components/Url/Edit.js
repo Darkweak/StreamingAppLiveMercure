@@ -10,7 +10,7 @@ const CustomToolbar = props => (
 export const UrlEdit = props => (
   <Edit {...props} undoable={false}>
     <SimpleForm toolbar={<CustomToolbar/>}>
-      <TextInput label="Url du stream" source="url" />
+      <TextInput label="Url du stream" source="url" fullWidth/>
     </SimpleForm>
   </Edit>
 );

@@ -29,7 +29,7 @@ services:
       - ./acme.json:/acme.json
     <<: *test
 
-  php-StreamingAppLiveMercure:
+  php:
     build:
       context: ./api
       target: api_platform_php
@@ -49,6 +49,21 @@ services:
       # - ./api/var:/srv/api/var:rw
     <<: *test
 
+  websocket-StreamingAppLiveMercure:
+    image: node:14.3-alpine
+    build:
+      context: ./websocket
+      target: development
+    environment:
+      NODE_ENV: dev
+    ports:
+      - 25565:25565
+    volumes:
+      - ./websocket:/home/node/app:rw,cached
+    labels:
+      - traefik.http.routers.bridge.rule=Host(`mercure.${DOMAIN}`)
+    <<: *test
+
   api-StreamingAppLiveMercure:
     build:
       context: ./api
@@ -56,29 +71,33 @@ services:
       <<: *api-cache-from
     image: ${NGINX_IMAGE:-quay.io/api-platform/nginx}
     depends_on:
-      - php-StreamingAppLiveMercure
+      - php
     volumes:
       - ./api/public:/srv/api/public:ro
     expose:
       - 80
     <<: *test
+    labels:
+      - traefik.http.routers.api.rule=Host(`api.${DOMAIN}`)
 
-  vulcain-StreamingAppLiveMercure:
-    image: dunglas/vulcain
-    environment:
-      - CERT_FILE=/certs/localhost.crt
-      - KEY_FILE=/certs/localhost.key
-      - UPSTREAM=http://api
-    depends_on:
-      - api-StreamingAppLiveMercure
-    volumes:
-      - ./cert.crt:/certs/localhost.crt
-      - ./cert.key:/certs/localhost.key
-    ports:
-      - target: 443
-        published: 8443
-        protocol: tcp
-    <<: *test
+#  vulcain-StreamingAppLiveMercure:
+#    image: dunglas/vulcain
+#    environment:
+#      - CERT_FILE=/certs/localhost.crt
+#      - KEY_FILE=/certs/localhost.key
+#      - UPSTREAM=http://api
+#    depends_on:
+#      - api-StreamingAppLiveMercure
+#    volumes:
+#      - ./cert.crt:/certs/localhost.crt
+#      - ./cert.key:/certs/localhost.key
+#    ports:
+#      - target: 443
+#        published: 8443
+#        protocol: tcp
+#    <<: *test
+#    labels:
+#      - traefik.http.routers.vulcain.rule=Host(`vulcain.${DOMAIN}`)
 
   db-StreamingAppLiveMercure:
     image: postgres:12-alpine
@@ -92,23 +111,31 @@ services:
       # - ./api/docker/db/data:/var/lib/postgresql/data:rw
     <<: *test
 
-  mercure-StreamingAppLiveMercure:
-    image: dunglas/mercure
-    environment:
-      - ALLOW_ANONYMOUS=1
-      - CERT_FILE=/certs/localhost.crt
-      - CORS_ALLOWED_ORIGINS=*
-      - DEMO=1
-      - JWT_KEY=!ChangeMe!
-      - KEY_FILE=/certs/localhost.key
-      - PUBLISH_ALLOWED_ORIGINS=* # required for publishing from the demo page
-    ports:
-      - target: 443
-        published: 1337
-        protocol: tcp
-    volumes:
-      - ./cert.crt:/certs/localhost.crt
-      - ./cert.key:/certs/localhost.key
+#  mercure-streamingapplivemercure:
+#    image: dunglas/mercure
+#    environment:
+#      - ALLOW_ANONYMOUS=1
+#      - CERT_FILE=/certs/localhost.crt
+#      - CORS_ALLOWED_ORIGINS=*
+#      - DEBUG=true
+#      - DISPATCH_TIMEOUT=0s
+#      #      - DEMO=1
+#      - READ_TIMEOUT=0s
+#      - WRITE_TIMEOUT=0s
+#      - JWT_KEY=!ChangeMe!
+#      - KEY_FILE=/certs/localhost.key
+#      - PUBLISH_ALLOWED_ORIGINS=* # required for publishing from the demo page
+#    ports:
+#      - target: 443
+#        published: 1337
+#        protocol: tcp
+#    volumes:
+#      - ./cert.crt:/certs/localhost.crt
+#      - ./cert.key:/certs/localhost.key
+#    labels:
+#      - traefik.http.routers.mercure.rule=Host(`mercure.${DOMAIN}`)
+##      - traefik.http.routers.mercure.tls=true
+#    <<: *test
 
   admin-StreamingAppLiveMercure:
     build:
@@ -125,6 +152,8 @@ services:
         published: 444
         protocol: tcp
     <<: *test
+    labels:
+      - traefik.http.routers.admin.rule=Host(`admin.${DOMAIN}`)
 
 volumes:
   db-data: {}
