@@ -10,7 +10,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "eventsource": "^1.0.7",
     "expo": "^37.0.12",
     "react": "16.11.0",
